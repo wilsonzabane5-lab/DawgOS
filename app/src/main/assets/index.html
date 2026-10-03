@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08090d">
+<title>DawgOS V2</title>
+<style>
+:root{--bg:#08090d;--card:#11141b;--card2:#171b24;--text:#f5f7fb;--muted:#9299aa;--line:#272d39;--accent:#7c5cff;--accent2:#a88cff;--good:#43d39c;--bad:#ff6377;--warn:#f5bd58}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:580px;margin:auto;min-height:100vh;padding:20px 16px 92px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.logo{font-size:26px;font-weight:850;letter-spacing:-1px}.logo span{color:var(--accent)}
+.icon{width:42px;height:42px;border:1px solid var(--line);background:var(--card);border-radius:14px;color:var(--text);font-size:19px}
+h1{font-size:28px;margin:0 0 4px;letter-spacing:-.7px}.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.card{background:linear-gradient(145deg,var(--card),#0f1117);border:1px solid var(--line);border-radius:19px;padding:15px}.wide{grid-column:1/-1}
+.label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}.value{font-size:27px;font-weight:820;margin-top:4px}.small{font-size:12px;color:var(--muted);margin-top:3px}
+.progress{height:8px;background:#262b35;border-radius:20px;overflow:hidden;margin-top:12px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:20px;transition:.25s}
+.section{font-size:18px;font-weight:780;margin:23px 0 10px}.list{display:grid;gap:9px}.row{display:flex;align-items:center;gap:11px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:15px}.row button{margin-left:auto}
+.dot{width:12px;height:12px;border:2px solid var(--accent);border-radius:50%;flex:none}.done .dot{background:var(--good);border-color:var(--good)}.done .task{text-decoration:line-through;color:var(--muted)}
+button{font:inherit;cursor:pointer}.primary{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:10px 13px;font-weight:720;margin-top:11px}.secondary{border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:11px;padding:9px 11px}
+input,textarea,select{width:100%;padding:11px;background:var(--card2);border:1px solid var(--line);border-radius:11px;color:var(--text);outline:none;font:inherit}textarea{min-height:90px;resize:vertical}
+.hidden{display:none}.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,9,13,.95);border-top:1px solid var(--line);backdrop-filter:blur(14px);z-index:5}.navin{max-width:580px;margin:auto;display:flex;justify-content:space-around;padding:9px 5px}.nav button{border:0;background:none;color:var(--muted);font-size:10px}.nav b{display:block;font-size:19px;margin-bottom:2px}.nav .active{color:var(--text)}
+.moods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mood{border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:13px;padding:12px 4px}.mood.selected{border-color:var(--accent);background:#1c1830}
+.stats{display:flex;justify-content:space-between;text-align:center}.stat strong{display:block;font-size:24px}.win{color:var(--good)}.loss{color:var(--bad)}.draw{color:var(--warn)}
+.record{display:flex;gap:8px}.record>*{flex:1}.tiny{font-size:11px;color:var(--muted)}.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:15px}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#202634;border:1px solid var(--line);padding:10px 14px;border-radius:12px;font-size:13px;z-index:20;white-space:nowrap}
+.timer{text-align:center;font-size:46px;font-weight:850;letter-spacing:2px}.center{text-align:center}
+@media(max-width:390px){.app{padding-left:12px;padding-right:12px}.value{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="logo">Dawg<span>OS</span></div><button class="icon" onclick="show('settings',this)">⚙️</button></header>
+
+<section id="home">
+<h1 id="welcome">Good to see you again, Wilson. 😊</h1><div class="sub" id="date"></div>
+<div class="card wide"><div class="label">How are you feeling today?</div><div class="moods" style="margin-top:10px">
+<button class="mood" onclick="mood('😄 Great',this)">😄<br><span class="tiny">Great</span></button>
+<button class="mood" onclick="mood('🙂 Good',this)">🙂<br><span class="tiny">Good</span></button>
+<button class="mood" onclick="mood('😐 Okay',this)">😐<br><span class="tiny">Okay</span></button>
+<button class="mood" onclick="mood('😔 Low',this)">😔<br><span class="tiny">Low</span></button>
+<button class="mood" onclick="mood('😤 Frustrated',this)">😤<br><span class="tiny">Frustrated</span></button>
+<button class="mood" onclick="mood('😴 Tired',this)">😴<br><span class="tiny">Tired</span></button>
+</div></div>
+<div class="section">Today</div>
+<div class="grid">
+<div class="card wide"><div class="label">Goal progress</div><div class="value" id="pct">0%</div><div class="progress"><div class="bar" id="bar"></div></div></div>
+<div class="card"><div class="label">Streak</div><div class="value">🔥 <span id="streak">1</span></div></div>
+<div class="card"><div class="label">eFootball</div><div class="value" id="homeRecord">0-0-0</div><div class="small">W-D-L</div></div>
+<div class="card"><div class="label">Notes</div><div class="value" id="noteCount">0</div></div>
+<div class="card"><div class="label">Next alarm</div><div class="value" id="nextAlarm">—</div></div>
+<div class="card"><div class="label">Mission</div><div class="value" style="font-size:18px" id="mission">Set one</div></div>
+</div>
+<div class="section">Today's goals</div><div class="list" id="tasks"></div>
+<div class="section">Quick note</div><div class="card"><input id="note" placeholder="Write anything..."><button class="primary" onclick="saveNote()">Save locally</button></div>
+<div class="section">Brain dump</div><div class="card"><textarea id="brain" placeholder="Get it out. This stays on your device."></textarea><button class="primary" onclick="saveBrain()">Save brain dump</button></div>
+</section>
+
+<section id="efootball" class="hidden">
+<h1>eFootball</h1><div class="sub">Your match history + form coach</div>
+<div class="card"><div class="stats">
+<div class="stat"><strong class="win" id="wins">0</strong><span class="tiny">Wins</span></div>
+<div class="stat"><strong class="draw" id="draws">0</strong><span class="tiny">Draws</span></div>
+<div class="stat"><strong class="loss" id="losses">0</strong><span class="tiny">Losses</span></div>
+<div class="stat"><strong id="wr">0%</strong><span class="tiny">Win rate</span></div>
+</div><button class="primary" onclick="analyze()">🧠 Analyze my form</button><button class="secondary" style="margin:11px 0 0 6px" onclick="speakAnalysis()">🔊 Read aloud</button><div id="analysis" class="small" style="margin-top:13px"></div></div>
+<div class="section">Add match</div><div class="card">
+<div class="record"><select id="result"><option value="W">Win</option><option value="D">Draw</option><option value="L">Loss</option></select><input id="score" placeholder="Score e.g. 3-1"><input id="rating" type="number" step=".1" placeholder="Rating"></div>
+<button class="primary" onclick="addMatch()">Save match</button></div>
+<div class="section">Match history</div><div class="list" id="matches"></div>
+</section>
+
+<section id="creator" class="hidden">
+<h1>Creator Hub</h1><div class="sub">Your content command center</div>
+<div class="grid"><div class="card"><div class="label">Followers</div><div class="value" id="followers">0</div></div><div class="card"><div class="label">Posts</div><div class="value" id="posts">0</div></div><div class="card"><div class="label">Highest views</div><div class="value" id="highviews">0</div></div><div class="card"><div class="label">Ideas</div><div class="value" id="ideas">0</div></div></div>
+<div class="section">New idea</div><div class="card"><input id="idea" placeholder="Song, video concept, scene..."><button class="primary" onclick="saveIdea()">Save idea</button></div>
+</section>
+
+<section id="learn" class="hidden">
+<h1>Learning</h1><div class="sub">Build your skills one session at a time</div>
+<div class="card center"><div class="label">Focus timer</div><div class="timer" id="timer">25:00</div><button class="primary" onclick="startTimer()">Start 25 min</button><button class="secondary" onclick="resetTimer()">Reset</button></div>
+<div class="section">Personal mission</div><div class="card"><input id="missionInput" placeholder="What are you working toward?"><button class="primary" onclick="setMission()">Set mission</button></div>
+</section>
+
+<section id="settings" class="hidden">
+<h1>Settings</h1><div class="sub">Make DawgOS yours</div>
+<div class="list">
+<div class="card"><b>⏰ Alarm</b><div class="small">Prototype stores your alarm. A real Android alarm will come when this becomes a native APK.</div><input id="alarmTime" type="time" style="margin-top:10px"><button class="primary" onclick="saveAlarm()">Save alarm</button></div>
+<div class="card"><b>🔒 Privacy</b><div class="small">Your V2 data is stored locally in this browser/app prototype.</div></div>
+<div class="card"><b>💾 Backup</b><div class="small">Export your local DawgOS data as a JSON file.</div><button class="primary" onclick="backup()">Export backup</button></div>
+<div class="card"><b>🧹 Reset</b><div class="small">Erase DawgOS local data from this device.</div><button class="secondary" onclick="resetAll()">Reset everything</button></div>
+</div>
+</section>
+</div>
+
+<div class="nav"><div class="navin">
+<button class="active" onclick="show('home',this)"><b>⌂</b>Home</button>
+<button onclick="show('efootball',this)"><b>⚽</b>eFootball</button>
+<button onclick="show('creator',this)"><b>🎬</b>Creator</button>
+<button onclick="show('learn',this)"><b>💻</b>Learn</button>
+</div></div>
+
+<script>
+const key=(x)=>'dawg_'+x;
+let tasks=JSON.parse(localStorage.getItem(key('tasks'))||'["Practice coding","Plan tomorrow","Do one useful thing"]');
+let done=JSON.parse(localStorage.getItem(key('done'))||'[]');
+let matches=JSON.parse(localStorage.getItem(key('matches'))||'[]');
+let notes=JSON.parse(localStorage.getItem(key('notes'))||'[]');
+let ideas=JSON.parse(localStorage.getItem(key('ideas'))||'[]');
+let seconds=1500, interval=null, lastAnalysis='';
+function save(k,v){localStorage.setItem(key(k),JSON.stringify(v))}
+function render(){
+document.getElementById('date').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+let p=tasks.length?Math.round(done.length/tasks.length*100):0;document.getElementById('pct').textContent=p+'%';document.getElementById('bar').style.width=p+'%';
+document.getElementById('tasks').innerHTML=tasks.map((t,i)=>`<div class="row ${done.includes(i)?'done':''}" onclick="toggle(${i})"><span class="dot"></span><span class="task">${esc(t)}</span></div>`).join('');
+let w=matches.filter(x=>x.r==='W').length,d=matches.filter(x=>x.r==='D').length,l=matches.filter(x=>x.r==='L').length;
+document.getElementById('wins').textContent=w;document.getElementById('draws').textContent=d;document.getElementById('losses').textContent=l;document.getElementById('wr').textContent=(matches.length?(w/matches.length*100).toFixed(1):0)+'%';document.getElementById('homeRecord').textContent=`${w}-${d}-${l}`;
+document.getElementById('matches').innerHTML=matches.length?matches.slice().reverse().map((m,i)=>`<div class="row"><span class="${m.r==='W'?'win':m.r==='L'?'loss':'draw'}"><b>${m.r}</b></span><span class="task">${m.score||'—'} · ${m.rating||'—'} rating<br><span class="tiny">${new Date(m.t).toLocaleString()}</span></span></div>`).join(''):'<div class="empty">No matches yet. Add your first match above.</div>';
+document.getElementById('noteCount').textContent=notes.length;document.getElementById('ideas').textContent=ideas.length;
+document.getElementById('nextAlarm').textContent=localStorage.getItem(key('alarm'))||'—';
+document.getElementById('mission').textContent=localStorage.getItem(key('mission'))||'Set one';
+document.getElementById('missionInput').value=localStorage.getItem(key('mission'))||'';
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function toggle(i){done=done.includes(i)?done.filter(x=>x!==i):[...done,i];save('done',done);render()}
+function mood(v,b){document.querySelectorAll('.mood').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');let m=JSON.parse(localStorage.getItem(key('moods'))||'[]');m.push({v,t:Date.now()});save('moods',m);toast('Mood saved privately ❤️')}
+function saveNote(){let v=document.getElementById('note').value.trim();if(!v)return;notes.push({v,t:Date.now()});save('notes',notes);document.getElementById('note').value='';render();toast('Saved locally ✓')}
+function saveBrain(){let v=document.getElementById('brain').value.trim();if(!v)return;notes.push({v:'🧠 '+v,t:Date.now()});save('notes',notes);document.getElementById('brain').value='';render();toast('Brain dump saved privately')}
+function parseScore(s){let m=String(s||'').match(/^(\d+)\s*[-:]\s*(\d+)$/);return m?{a:+m[1],b:+m[2],diff:+m[1]-+m[2]}:null}
+function addMatch(){let r=document.getElementById('result').value,score=document.getElementById('score').value.trim(),rating=document.getElementById('rating').value.trim();matches.push({r,score,rating,t:Date.now()});save('matches',matches);['score','rating'].forEach(id=>document.getElementById(id).value='');render();toast('Match saved ⚽')}
+function analyze(){if(!matches.length){lastAnalysis='You have no recorded matches yet. Add some matches and I can analyze your form.';document.getElementById('analysis').textContent=lastAnalysis;return}
+let w=matches.filter(x=>x.r==='W').length,d=matches.filter(x=>x.r==='D').length,l=matches.filter(x=>x.r==='L').length,recent=matches.slice(-5),rw=recent.filter(x=>x.r==='W').length,rl=recent.filter(x=>x.r==='L').length;
+let streak=0;for(let i=matches.length-1;i>=0&&matches[i].r==='W';i--)streak++;
+let scored=matches.map(x=>({m:x,p:parseScore(x.score)})).filter(x=>x.p);let wins=scored.filter(x=>x.p.diff>0),losses=scored.filter(x=>x.p.diff<0);let biggestWin=wins.length?wins.reduce((a,b)=>b.p.diff>a.p.diff?b:a):null,biggestLoss=losses.length?losses.reduce((a,b)=>b.p.diff<a.p.diff?b:a):null;let avgWin=wins.length?wins.reduce((a,b)=>a+b.p.diff,0)/wins.length:0,avgLoss=losses.length?losses.reduce((a,b)=>a+Math.abs(b.p.diff),0)/losses.length:0;let heavyWins=wins.filter(x=>x.p.diff>=3).length,heavyLosses=losses.filter(x=>x.p.diff<=-3).length;
+let lines=[`You have played ${matches.length} matches: ${w} wins, ${d} draws and ${l} losses. Your win rate is ${(w/matches.length*100).toFixed(1)}%.`,`In your last ${recent.length}, you have ${rw} wins and ${rl} losses. Your current winning streak is ${streak}.`];
+if(scored.length){if(biggestWin)lines.push(`Your biggest win is ${biggestWin.m.score}, a ${biggestWin.p.diff}-goal margin.`);if(biggestLoss)lines.push(`Your biggest loss is ${biggestLoss.m.score}, a ${Math.abs(biggestLoss.p.diff)}-goal margin.`);if(wins.length)lines.push(`Your average win margin is ${avgWin.toFixed(1)} goals.`);if(losses.length)lines.push(`Your average loss margin is ${avgLoss.toFixed(1)} goals.`);lines.push(`You have ${heavyWins} big wins and ${heavyLosses} heavy losses, using a 3-goal margin as the threshold.`)}else lines.push('Add scores like 4-0 or 1-3 to unlock big-win and big-loss analysis.');
+lastAnalysis=lines.join(' ');document.getElementById('analysis').textContent=lastAnalysis}
+function speakAnalysis(){if(!lastAnalysis)analyze();if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(lastAnalysis))}else toast('Voice is not supported here')}
+function saveIdea(){let v=document.getElementById('idea').value.trim();if(!v)return;ideas.push(v);save('ideas',ideas);document.getElementById('idea').value='';render();toast('Idea saved 🎬')}
+function startTimer(){if(interval)return;interval=setInterval(()=>{seconds--;if(seconds<=0){clearInterval(interval);interval=null;seconds=0;toast('Focus session complete 🔥');if('speechSynthesis'in window)speechSynthesis.speak(new SpeechSynthesisUtterance('Focus session complete.'));}timerText();},1000);toast('Focus session started ⏱️')}
+function resetTimer(){clearInterval(interval);interval=null;seconds=1500;timerText()}
+function timerText(){document.getElementById('timer').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')}
+function setMission(){let v=document.getElementById('missionInput').value.trim();localStorage.setItem(key('mission'),v);render();toast('Mission set 🎯')}
+function saveAlarm(){let v=document.getElementById('alarmTime').value;if(!v)return;localStorage.setItem(key('alarm'),v);render();toast('Alarm saved ⏰')}
+function backup(){let data={tasks,done,matches,notes,ideas,moods:JSON.parse(localStorage.getItem(key('moods'))||'[]'),mission:localStorage.getItem(key('mission'))||'',alarm:localStorage.getItem(key('alarm'))||''};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='DawgOS-backup.json';a.click()}
+function resetAll(){if(confirm('Erase all DawgOS data on this device?')){Object.keys(localStorage).filter(x=>x.startsWith('dawg_')).forEach(x=>localStorage.removeItem(x));location.reload()}}
+function show(id,btn){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(btn&&btn.classList.contains('nav'))btn.classList.add('active')}
+function toast(s){let x=document.createElement('div');x.className='toast';x.textContent=s;document.body.appendChild(x);setTimeout(()=>x.remove(),1900)}
+render();timerText();
+</script>
+</body>
+</html>
