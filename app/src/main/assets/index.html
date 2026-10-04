@@ -51,7 +51,7 @@ input,textarea,select{width:100%;padding:11px;background:var(--card2);border:1px
 <div class="card"><div class="label">Next alarm</div><div class="value" id="nextAlarm">—</div></div>
 <div class="card"><div class="label">Mission</div><div class="value" style="font-size:18px" id="mission">Set one</div></div>
 </div>
-<div class="section">Today's goals</div><div class="list" id="tasks"></div>
+<div class="section">Today's goals</div><div class="card"><div class="small">Up to 3 missions for today.</div><div id="taskInputs"></div><button class="primary" onclick="saveTasks()">Save today's goals</button></div><div class="list" id="tasks"></div>
 <div class="section">Quick note</div><div class="card"><input id="note" placeholder="Write anything..."><button class="primary" onclick="saveNote()">Save locally</button></div>
 <div class="section">Brain dump</div><div class="card"><textarea id="brain" placeholder="Get it out. This stays on your device."></textarea><button class="primary" onclick="saveBrain()">Save brain dump</button></div>
 </section>
@@ -102,16 +102,23 @@ input,textarea,select{width:100%;padding:11px;background:var(--card2);border:1px
 
 <script>
 const key=(x)=>'dawg_'+x;
-let tasks=JSON.parse(localStorage.getItem(key('tasks'))||'["Practice coding","Plan tomorrow","Do one useful thing"]');
+const todayKey=()=>new Date().toISOString().slice(0,10);
+let savedDay=localStorage.getItem(key("tasks_day"))||todayKey();
+if(savedDay!==todayKey()){localStorage.removeItem(key("tasks"));localStorage.removeItem(key("done"));savedDay=todayKey();localStorage.setItem(key("tasks_day"),savedDay)}
+
+let tasks=JSON.parse(localStorage.getItem(key('tasks'))||'[]');
 let done=JSON.parse(localStorage.getItem(key('done'))||'[]');
 let matches=JSON.parse(localStorage.getItem(key('matches'))||'[]');
 let notes=JSON.parse(localStorage.getItem(key('notes'))||'[]');
 let ideas=JSON.parse(localStorage.getItem(key('ideas'))||'[]');
 let seconds=1500, interval=null, lastAnalysis='';
 function save(k,v){localStorage.setItem(key(k),JSON.stringify(v))}
+function renderTaskInputs(){let box=document.getElementById("taskInputs");if(!box)return;box.innerHTML=[0,1,2].map(i=>`<input id="task${i}" placeholder="Mission ${i+1}" value="${esc(tasks[i]||"")}" style="margin-top:8px">`).join("");}
+function saveTasks(){let a=[0,1,2].map(i=>document.getElementById("task"+i).value.trim()).filter(Boolean);if(a.length>3)return;tasks=a;done=done.filter(i=>i<a.length);save("tasks",tasks);save("done",done);localStorage.setItem(key("tasks_day"),todayKey());render();renderTaskInputs();toast("Today's goals saved 🎯")}
+
 function render(){
 document.getElementById('date').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
-let p=tasks.length?Math.round(done.length/tasks.length*100):0;document.getElementById('pct').textContent=p+'%';document.getElementById('bar').style.width=p+'%';
+let p=Math.min(100,Math.round(done.length/3*100));document.getElementById('pct').textContent=p+'%';document.getElementById('bar').style.width=p+'%';
 document.getElementById('tasks').innerHTML=tasks.map((t,i)=>`<div class="row ${done.includes(i)?'done':''}" onclick="toggle(${i})"><span class="dot"></span><span class="task">${esc(t)}</span></div>`).join('');
 let w=matches.filter(x=>x.r==='W').length,d=matches.filter(x=>x.r==='D').length,l=matches.filter(x=>x.r==='L').length;
 document.getElementById('wins').textContent=w;document.getElementById('draws').textContent=d;document.getElementById('losses').textContent=l;document.getElementById('wr').textContent=(matches.length?(w/matches.length*100).toFixed(1):0)+'%';document.getElementById('homeRecord').textContent=`${w}-${d}-${l}`;
@@ -146,7 +153,7 @@ function backup(){let data={tasks,done,matches,notes,ideas,moods:JSON.parse(loca
 function resetAll(){if(confirm('Erase all DawgOS data on this device?')){Object.keys(localStorage).filter(x=>x.startsWith('dawg_')).forEach(x=>localStorage.removeItem(x));location.reload()}}
 function show(id,btn){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(btn&&btn.classList.contains('nav'))btn.classList.add('active')}
 function toast(s){let x=document.createElement('div');x.className='toast';x.textContent=s;document.body.appendChild(x);setTimeout(()=>x.remove(),1900)}
-render();timerText();
+render();renderTaskInputs();timerText();
 </script>
 </body>
 </html>
